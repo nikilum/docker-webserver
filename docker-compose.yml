@@ -1,0 +1,38 @@
+version: '3.8'
+
+networks:
+  webserver:
+    name: webserver
+    driver: bridge
+
+services:
+  nginx-proxy:
+    container_name: nginx-proxy
+    image: nginxproxy/nginx-proxy
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./certs:/etc/nginx/certs
+      - ./vhost:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - webserver
+  acme-companion:
+    container_name: nginx-proxy-acme
+    image: nginxproxy/acme-companion
+    volumes:
+      - ./certs:/etc/nginx/certs
+      - ./vhost:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
+      - ./acme:/etc/acme.sh
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - nginx-proxy
+    environment:
+      DEFAULT_EMAIL: lumpov.business@gmail.com
+      NGINX_PROXY_CONTAINER: nginx-proxy
+    networks:
+      - webserver
